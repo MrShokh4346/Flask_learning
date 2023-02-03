@@ -16,6 +16,8 @@
     {{form.name( class="form-control")}}
     {{form.email.label(class="form-label")}}
     {{form.email( class="form-control")}}
+    {{form.color.label(class="form-label")}}
+    {{form.color( class="form-control")}}
     <br>
     {{form.submit(class="btn btn-secondary")}}
 
@@ -29,6 +31,7 @@
         <th scope="row">{{user.id}}</th>
         <td><a href="{{ url_for('update', id=user.id) }}">{{user.username}}</a></td>
         <td>{{user.email}}</td>
+        <td>{{user.color}}</td>
     </tr> 
     {% endfor %}
 </table>
@@ -42,6 +45,7 @@
     <th scope="row">{{user.id}}</th>
     <td>{{user.username}}</td>
     <td>{{user.email}}</td>
+    <td>{{user.color}}</td>
 </tr> 
 {% endfor %}
 </table>

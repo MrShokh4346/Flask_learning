@@ -4,6 +4,7 @@ from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from flask_migrate import Migrate
 
 
 app = Flask(__name__)
@@ -15,11 +16,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://flasker:flasker123@localho
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(200), nullable=True)
     email = db.Column(db.String(120), nullable=True, unique=True)
+    color = db.Column(db.String(50))
     date_joined = db.Column(db.DateTime, default=datetime.utcnow)
     
     def __repr__(self):
@@ -36,6 +39,7 @@ class NameForm(FlaskForm):
 class UserForm(FlaskForm):
     name = StringField('Name:', validators=[DataRequired()])
     email = StringField('Email:', validators=[DataRequired()])
+    color = StringField('Color')
     submit = SubmitField('Submit')
 
 @app.route('/update/<int:id>',  methods=['GET', 'POST'])
@@ -45,6 +49,7 @@ def update(id):
     if request.method == "POST":
         name_to_update.username = request.form["name"]
         name_to_update.email = request.form["email"]
+        name_to_update.color = request.form["color"]
         try:
             db.session.commit()
             flash('User Created Successfully')
@@ -66,15 +71,16 @@ def add_user():
         # user = Users.query.filter_by(email=form.email.data).first()
         user = db.session.execute(db.select(Users).filter_by(email=form.email.data)).scalar()
         if user is None:
-            user = Users(username=form.name.data, email=form.email.data)
+            user = Users(username=form.name.data, email=form.email.data, color=form.color.data)
             db.session.add(user)
             db.session.commit()
         name = form.name.data
         flash("User Created Successfully")
     # all_users = Users.query.order_by(Users.date_joined)
     all_users = db.session.execute(db.select(Users).order_by(Users.date_joined)).scalars()
-    print(all_users)
     return render_template('add_user.html', name=name, form=form, all_users=all_users)
+
+
 
 @app.route('/name', methods=['GET', 'POST'])
 def name():
@@ -85,9 +91,12 @@ def name():
         flash("Form Submitted Successfully")
     return render_template('name.html', name=name, form=form)
 
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/user/<name>')
 def user(name):
