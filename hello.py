@@ -1,4 +1,4 @@
-from flask import Flask, render_template, flash
+from flask import Flask, render_template, flash, request
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
@@ -10,7 +10,9 @@ app = Flask(__name__)
 
 app.config['SECRET_KEY'] = "this is my secter key"
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
+# app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://flasker:flasker123@localhost:5432/users"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
@@ -35,6 +37,26 @@ class UserForm(FlaskForm):
     name = StringField('Name:', validators=[DataRequired()])
     email = StringField('Email:', validators=[DataRequired()])
     submit = SubmitField('Submit')
+
+@app.route('/update/<int:id>',  methods=['GET', 'POST'])
+def update(id):
+    form = UserForm()
+    name_to_update = Users.query.get_or_404(id)
+    if request.method == "POST":
+        name_to_update.username = request.form["name"]
+        name_to_update.email = request.form["email"]
+        try:
+            db.session.commit()
+            flash('User Created Successfully')
+            return render_template('update.html', name_to_update=name_to_update, form=form)
+
+        except:
+            flash('Something Went Wrong. Try again...')
+            return render_template('update.html', name_to_update=name_to_update, form=form)
+    else:
+        return render_template('update.html', name_to_update=name_to_update, form=form)
+
+
 
 @app.route('/user/add', methods=['GET', 'POST'])
 def add_user():
