@@ -18,6 +18,10 @@
     {{form.email( class="form-control")}}
     {{form.color.label(class="form-label")}}
     {{form.color( class="form-control")}}
+    {{form.password.label(class="form-label")}}
+    {{form.password( class="form-control")}}
+    {{form.password2.label(class="form-label")}}
+    {{form.password2( class="form-control")}}
     <br>
     {{form.submit(class="btn btn-secondary")}}
 
@@ -32,6 +36,7 @@
         <td><a href="{{ url_for('update', id=user.id) }}">{{user.username}}</a></td>
         <td>{{user.email}}</td>
         <td>{{user.color}}</td>
+        <td>{{user.password_hash}}</td>
         <td><a href="{{url_for('delete', id=user.id) }}">Delete</a></td>
     </tr> 
     {% endfor %}
