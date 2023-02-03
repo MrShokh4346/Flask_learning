@@ -42,6 +42,26 @@ class UserForm(FlaskForm):
     color = StringField('Color')
     submit = SubmitField('Submit')
 
+
+
+@app.route('/delete/<int:id>', methods=['GET', 'POST'])
+def delete(id):
+    name = None
+    form = UserForm()
+    user_to_delete = Users.query.get_or_404(id)
+    try:
+        db.session.delete(user_to_delete)
+        db.session.commit()
+        flash('User Deleted')
+        all_users = db.session.execute(db.select(Users).order_by(Users.date_joined)).scalars()
+        return render_template('add_user.html', name=name, form=form, all_users=all_users)
+    except:
+        flash('Something went wrong. Try again...')
+        all_users = db.session.execute(db.select(Users).order_by(Users.date_joined)).scalars()
+        return render_template('add_user.html', name=name, form=form, all_users=all_users)
+
+
+
 @app.route('/update/<int:id>',  methods=['GET', 'POST'])
 def update(id):
     form = UserForm()
