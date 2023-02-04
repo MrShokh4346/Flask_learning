@@ -7,6 +7,7 @@ from datetime import datetime
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from wtforms.widgets import TextArea
+from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 
 
 app = Flask(__name__)
@@ -19,10 +20,54 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
-class Users(db.Model):
+@login_manager.user_loader
+def load_user(user_id):
+    return Users.query.get(int(user_id))
+
+
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Submit')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = Users.query.filter_by(username=form.username.data).first()
+        if user:
+            if check_password_hash(user.password_hash, form.password.data):
+                login_user(user)
+                flash('Login Succesful')
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Wrong Password.Try again...')
+        else:
+            flash("This User Don't Exists!")
+    return render_template('login.html', form=form)
+
+
+@app.route('/dashboard', methods=['GET', 'POST'])
+@login_required
+def dashboard():
+    return render_template('dashboard.html')
+
+@app.route('/logout', methods=['GET', 'POST'])
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out')
+    return redirect(url_for('login'))
+
+
+class Users(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(200), nullable=False)
+    name = db.Column(db.String(50), nullable=False)
+    username = db.Column(db.String(20),unique=True, nullable=False)
     email = db.Column(db.String(120), nullable=False, unique=True)
     color = db.Column(db.String(50))
     date_joined = db.Column(db.DateTime, default=datetime.utcnow)
@@ -75,13 +120,14 @@ class TestForm(FlaskForm):
 
 class UserForm(FlaskForm):
     name = StringField('Name:', validators=[DataRequired()])
+    username = StringField('Username:', validators=[DataRequired()])
     email = StringField('Email:', validators=[DataRequired()])
     color = StringField('Color')
     password = PasswordField('Password', validators=[DataRequired(), EqualTo('password2', message='Passwords Must Much!')])
     password2 = PasswordField('Comfirm password', validators=[DataRequired()])
     submit = SubmitField('Submit')
 
-@app.route('/delete/<int:id>')
+@app.route('/delete_post/<int:id>')
 def delete_post(id):
     try:
         post = Posts.query.get_or_404(id)
@@ -209,14 +255,15 @@ def add_user():
         user = db.session.execute(db.select(Users).filter_by(email=form.email.data)).scalar()
         if user is None:
             hashed_pw = generate_password_hash(form.password.data, 'sha256')
-            user = Users(username=form.name.data, email=form.email.data, color=form.color.data, password_hash=hashed_pw)
+            user = Users(username=form.username.data,name=form.name.data,    email=form.email.data, color=form.color.data, password_hash=hashed_pw)
             db.session.add(user)
             db.session.commit()
             name = form.name.data
             form.name.data = ''
-            form.name.email = ''
-            form.name.color = ''
-            form.name.password = ''
+            form.username.data = ''
+            form.email.data = ''
+            form.color.data = ''
+            form.password.data = ''
             flash("User Created Successfully")
         else:
             flash("This Email Is Already Exists")

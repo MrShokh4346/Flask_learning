@@ -8,12 +8,16 @@
   </div>
 {% endfor %}
 <br>
+<h1>Registration</h1>
+<br>    
 {% if not name %}
 <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
 <form action="" method="post">
     {{form.hidden_tag()}}
     {{form.name.label(class="form-label")}}
     {{form.name( class="form-control")}}
+    {{form.username.label(class="form-label")}}
+    {{form.username( class="form-control")}}
     {{form.email.label(class="form-label")}}
     {{form.email( class="form-control")}}
     {{form.color.label(class="form-label")}}
@@ -33,6 +37,7 @@
     
     <tr>
         <th scope="row">{{user.id}}</th>
+        <td>{{user.name}}</td>
         <td><a href="{{ url_for('update', id=user.id) }}">{{user.username}}</a></td>
         <td>{{user.email}}</td>
         <td>{{user.color}}</td>
