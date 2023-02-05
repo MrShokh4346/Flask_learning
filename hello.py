@@ -24,6 +24,20 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return Users.query.get(int(user_id))
 
+@app.context_processor
+def base():
+    form = SearchForm()
+    return dict(form = form)
+
+@app.route('/search', methods=['POST'])
+def search():
+    form = SearchForm()
+    if form.validate_on_submit():
+        searched = request.form['searched']
+        posts = Posts.query.filter(Posts.body.like('%' + searched + "%"))
+        posts = posts.order_by(Posts.title).all()
+        return render_template('search.html', searched=searched, posts=posts)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
