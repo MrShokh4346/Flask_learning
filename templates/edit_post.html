@@ -8,6 +8,8 @@
   </div>
 {% endfor %}
 <br>
+<h1>Edit post</h1>
+<br>
 <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
 <form action="" method="post">
     {{form.hidden_tag()}}
@@ -15,8 +17,6 @@
     {{form.title( class="form-control")}}
     {{form.slug.label(class="form-label")}}
     {{form.slug( class="form-control")}}
-    {{form.author.label(class="form-label")}}
-    {{form.author( class="form-control")}}
     {{form.body.label(class="form-label")}}
     {{form.body( class="form-control", rows=5)}}
     

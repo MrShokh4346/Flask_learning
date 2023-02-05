@@ -28,4 +28,26 @@
     </div>
   </div>
 
+<br>
+  <h1>Update User</h1>
+  <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
+  <form action="/dashboard" method="post">
+      {{form.hidden_tag()}}
+      {{form.name.label(class="form-label")}}
+      {{form.name( class="form-control", value=current_user.name)}}
+      {{form.username.label(class="form-label")}}
+      {{form.username( class="form-control", value=current_user.username)}}
+      {{form.email.label(class="form-label")}}
+      {{form.email( class="form-control", value=current_user.email)}}
+      {{form.color.label(class="form-label")}}
+      {{form.color( class="form-control", value=current_user.color)}}
+      {{form.password.label(class="form-label")}}
+      {{form.password( class="form-control" )}}
+      {{form.password2.label(class="form-label")}}
+      {{form.password2( class="form-control" )}}
+      <br>
+      {{form.submit(class="btn btn-secondary")}}
+  </form>
+  </div>
+  
 {% endblock %}
