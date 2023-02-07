@@ -24,6 +24,8 @@
     {{form.submit(class="btn btn-secondary")}}
 
 </form>
+{{ ckeditor.load() }}
+{{ ckeditor.config(name='body') }}
 <br><br><br>
 <table  class="table table-hover table-striped table-bordered">
     {% for user in posts %}

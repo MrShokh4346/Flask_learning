@@ -5,10 +5,16 @@ from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from forms import *
+from flask_ckeditor import CKEditor
+from uuid import uuid1
+import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
+ckeditor = CKEditor(app)
 
 app.config['SECRET_KEY'] = "this is my secter key"
+app.config['UPLOAD_FILE'] = 'static/images/'
 
 # app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://flasker:flasker123@localhost:5432/users"
@@ -28,6 +34,16 @@ def load_user(user_id):
 def base():
     form = SearchForm()
     return dict(form = form)
+
+@app.route('/admin')
+@login_required
+def admin():
+    if current_user.id == 10:
+        return render_template("admin.html")
+    else:
+        flash("You are not Admin")
+        return redirect(url_for('dashboard'))
+
 
 @app.route('/search', methods=['POST'])
 def search():
@@ -60,19 +76,32 @@ def login():
 @login_required
 def dashboard():
     form = UserForm()
+    # john = Users.query.filter_by(username='john').first()
+    # john.is_admin = True
+
+    # flash(john.is_admin)
+    # db.session.commit()
     us = Users.query.all()
     if request.method == "POST":
         current_user.name = request.form["name"]
         current_user.username = request.form["username"]
         current_user.email = request.form["email"]
-        current_user.color = request.form["color"]
-        current_user.password = request.form["password"]
-        try:
+        if request.files['profile_pic']:
+            profile_pic = request.files['profile_pic']
+            picname = secure_filename(profile_pic.filename)
+            pic_name = str(uuid1()) + "_" + picname
+            current_user.profile_pic = pic_name
+            try:
+                db.session.commit()
+                profile_pic.save(os.path.join(app.config['UPLOAD_FILE'], pic_name))
+                flash('User Updated Successfully')
+                return render_template('dashboard.html', form=form)
+            except:
+                flash('Something Went Wrong. Try again...')
+                return render_template('dashboard.html', form=form)
+        else:
             db.session.commit()
             flash('User Updated Successfully')
-            return render_template('dashboard.html', form=form)
-        except:
-            flash('Something Went Wrong. Try again...')
             return render_template('dashboard.html', form=form)
     else:
         return render_template('dashboard.html', form=form, us=us)
@@ -89,7 +118,7 @@ def logout():
 @login_required
 def delete_post(id):
     post = Posts.query.get_or_404(id)
-    if post.user_id == current_user.id:
+    if post.user_id == current_user.id or current_user.is_admin:
         try:
             post = Posts.query.get_or_404(id)
             db.session.delete(post)
@@ -109,7 +138,7 @@ def delete_post(id):
 @login_required
 def edit(id):
     post = Posts.query.get_or_404(id)
-    if post.user_id == current_user.id:
+    if post.user_id == current_user.id or current_user.is_admin:
         form = PostForm()
         if form.validate_on_submit():
             post.title = form.title.data
@@ -175,32 +204,34 @@ def add_post():
 @app.route('/delete/<int:id>', methods=['GET', 'POST'])
 @login_required
 def delete(id):
-    name = None
-    form = UserForm()
-    user_to_delete = Users.query.get_or_404(id)
-    try:
-        db.session.delete(user_to_delete)
-        db.session.commit()
-        flash('User Deleted')
-        all_users = db.session.execute(db.select(Users).order_by(Users.date_joined)).scalars()
-        return render_template('add_user.html', name=name, form=form, all_users=all_users)
-    except:
-        flash('Something went wrong. Try again...')
-        all_users = db.session.execute(db.select(Users).order_by(Users.date_joined)).scalars()
-        return render_template('add_user.html', name=name, form=form, all_users=all_users)
-
+    if id == current_user.id or current_user.is_admin:
+        name = None
+        form = UserForm()
+        user_to_delete = Users.query.get_or_404(id)
+        try:
+            db.session.delete(user_to_delete)
+            db.session.commit()
+            flash('User Deleted')
+            all_users = db.session.execute(db.select(Users).order_by(Users.date_joined)).scalars()
+            return render_template('add_user.html', name=name, form=form, all_users=all_users)
+        except:
+            flash('Something went wrong. Try again...')
+            all_users = db.session.execute(db.select(Users).order_by(Users.date_joined)).scalars()
+            return render_template('add_user.html', name=name, form=form, all_users=all_users)
+    else:
+        flash("Sorry, you cannot delete this user")
+        return redirect(url_for('dashboard'))
 
 
 @app.route('/update/<int:id>',  methods=['GET', 'POST'])
 @login_required
 def update(id):
-    if id == current_user.id:
+    if id == current_user.id or current_user.is_admin:
         form = UserForm()
         name_to_update = Users.query.get_or_404(id)
         if request.method == "POST":
             name_to_update.name = request.form["name"]
             name_to_update.email = request.form["email"]
-            name_to_update.color = request.form["color"]
             try:
                 db.session.commit()
                 flash('User Created Successfully')
@@ -224,14 +255,13 @@ def add_user():
         user = db.session.execute(db.select(Users).filter_by(email=form.email.data)).scalar()
         if user is None:
             hashed_pw = generate_password_hash(form.password.data, 'sha256')
-            user = Users(username=form.username.data,name=form.name.data,    email=form.email.data, color=form.color.data, password_hash=hashed_pw)
+            user = Users(username=form.username.data,name=form.name.data,    email=form.email.data, password_hash=hashed_pw)
             db.session.add(user)
             db.session.commit()
             name = form.name.data
             form.name.data = ''
             form.username.data = ''
             form.email.data = ''
-            form.color.data = ''
             form.password.data = ''
             flash("User Created Successfully")
         else:
@@ -276,12 +306,6 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/user/<name>')
-def user(name):
-    user = name
-    return render_template('profile.html', user=user)
-
-
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
@@ -310,7 +334,8 @@ class Users(db.Model, UserMixin):
     name = db.Column(db.String(50), nullable=False)
     username = db.Column(db.String(20),unique=True, nullable=False)
     email = db.Column(db.String(120), nullable=False, unique=True)
-    color = db.Column(db.String(50))
+    profile_pic = db.Column(db.String(500), nullable=True)
+    is_admin = db.Column(db.Boolean(), default=False)
     date_joined = db.Column(db.DateTime, default=datetime.utcnow)
     password_hash = db.Column(db.String(128))
     posts = db.relationship('Posts', backref='poster')
@@ -332,3 +357,5 @@ class Users(db.Model, UserMixin):
 with app.app_context():
     db.create_all()
     db.session.commit()
+
+    

@@ -15,8 +15,6 @@
     {{form.name( class="form-control", value=name_to_update.name)}}
     {{form.email.label(class="form-label")}}
     {{form.email( class="form-control", value=name_to_update.email)}}
-    {{form.color.label(class="form-label")}}
-    {{form.color( class="form-control", value=name_to_update.color)}}
     <br>
     {{form.submit(class="btn btn-secondary")}}
     <a href="{{ url_for('delete', id=name_to_update.id) }}" class="btn btn-danger">Delete</a>

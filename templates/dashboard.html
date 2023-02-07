@@ -11,27 +11,45 @@
 <h1>Dashboard</h1>
 <br>
 <div class="card">
-    <div class="card-header">
-      {{current_user.username}}
-    </div>
-    <div class="card-body">
-      <h5 class="card-title">Current user's info</h5>
-      <p class="card-text">
-        <strong>Name: </strong>{{ current_user.name }}<br>
-        <strong>Username: </strong>{{ current_user.username }}<br>
-        <strong>Email: </strong>{{ current_user.email }}<br>
-        <strong>Color: </strong>{{ current_user.color }}<br>
-        <strong>ID: </strong>{{ current_user.id }}<br>
-        <strong>Date joined: </strong>{{ current_user.date_joined }}<br>
-      </p>
-      <a href="{{ url_for('logout') }}" class="btn btn-secondary btn btn-sm">Logout</a>
-    </div>
+  <div class="card-header">
+    {{current_user.username}}
   </div>
+  <div class="card-body">
 
+      <div class="container">
+        <div class="row">
+          <div class="col-8">
+            <h5 class="card-title">{{current_user.name}}</h5>
+            <p class="card-text">
+              <strong>Name: </strong>{{ current_user.name }}<br>
+              <strong>Username: </strong>{{ current_user.username }}<br>
+              <strong>Email: </strong>{{ current_user.email }}<br>
+              <strong>ID: </strong>{{ current_user.id }}<br>
+              <strong>Is Admn: </strong>{{ current_user.is_admin }}<br>
+              <strong>Pic: </strong>{{ current_user.profile_pic }}<br>
+              <strong>Date joined: </strong>{{ current_user.date_joined }}<br>
+            </p>
+            <a href="{{ url_for('logout') }}" class="btn btn-secondary btn btn-sm">Logout</a>
+            <a href="{{url_for('delete', id=current_user.id) }}" class="btn btn-danger btn btn-sm">Delete Account</a>
+
+          </div>
+          <div class="col-4">
+            {% if current_user.profile_pic %}
+            <img src="{{ url_for('static', filename='images/' + current_user.profile_pic) }}" width="200" align="right" alt="User pic">
+            {% else %}
+            <img src="{{ url_for('static', filename='images/default-user.png') }}" width="200" align="right" alt="User pic">
+            {% endif %}
+          </div>
+          
+       </div>
+      </div>
+  </div>
+</div>
+<br>
 <br>
   <h1>Update User</h1>
   <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
-  <form action="/dashboard" method="post">
+  <form action="/dashboard" enctype="multipart/form-data" method="post">
       {{form.hidden_tag()}}
       {{form.name.label(class="form-label")}}
       {{form.name( class="form-control", value=current_user.name)}}
@@ -39,12 +57,8 @@
       {{form.username( class="form-control", value=current_user.username)}}
       {{form.email.label(class="form-label")}}
       {{form.email( class="form-control", value=current_user.email)}}
-      {{form.color.label(class="form-label")}}
-      {{form.color( class="form-control", value=current_user.color)}}
-      {{form.password.label(class="form-label")}}
-      {{form.password( class="form-control" )}}
-      {{form.password2.label(class="form-label")}}
-      {{form.password2( class="form-control" )}}
+      {{form.profile_pic.label(class="form-label")}}
+      {{form.profile_pic( class="form-control", value=current_user.profile_pic)}}
       <br>
       {{form.submit(class="btn btn-secondary")}}
   </form>
